@@ -5,6 +5,7 @@ to produce useful outputs
 """
 
 from mpu9250 import MPU9250
+from iir import iir
 import math
 
 # Constant Definitions
@@ -15,17 +16,30 @@ class tilt:
     def __init__(self, i2c, ak8963=None):
         # Initialise the sensor
         self.sensor = MPU9250(i2c, ak8963=ak8963)
-
+        
+        # Initialise the class variables
         self.G_roll = 0
         self.G_pitch = 0
         self.G_yaw = 0
-
-    """ Function to get the raw measurements from the sensor"""
-    def measure(self):
-        # Doesn't return any values, but sets the class variables to the current values from the sensor
-        self.accel = self.sensor.acceleration # (ax, ay, az)
-        self.gyro = self.sensor.gyro # (Gx, Gy, Gz)
-        self.mag = self.sensor.magnetic # (mx, my, mz)
+        
+        # Initialise the filter
+        _a = [0, 0, 0]
+        _K = 1/4
+        _b = [0*_K, 0*_K, 0*_K]
+        self.accel_filter_x = iir(_a, _b)
+        self.accel_filter_y = iir(_a, _b)
+        self.accel_filter_z = iir(_a, _b)
+        
+    """ Function to update the entire class, should be called each measurement cycle
+    This function gets the raw values from the sensors, updates the filters, then updates
+    the value for the class outputs"""
+    def update(self):
+        # Measure raw values
+        self.measure()
+        
+        # Filter raw values
+        self.filter()
+    
 
     """ Calculate the roll and pitch using the accelerometer values"""
     def accel_rp(self):
@@ -54,8 +68,23 @@ class tilt:
         # Gives the values in radians
 
         _temp = self.gyro[0] * RS2DS + 60
-
+        
         # roll = Gx * delta_t
         self.G_roll += _temp * dt
         self.G_pitch += self.gyro[1] * dt
         self.G_yaw += self.gyro[2] * dt
+        
+    """ Function to get the raw measurements from the sensor"""
+    def measure(self):
+        # Doesn't return any values, but sets the class variables to the current values from the sensor
+        self.accel = self.sensor.acceleration # (ax, ay, az)
+        self.gyro = self.sensor.gyro # (Gx, Gy, Gz)
+        self.mag = self.sensor.magnetic # (mx, my, mz)
+        
+    """ Function to filter the measured values"""
+    def filter(self):
+        # Update the filters with the new measurements
+        self.accel_filter_x.update(self.accel[0])
+        self.accel_filter_y.update(self.accel[1])
+        self.accel_filter_z.update(self.accel[2])
+        
