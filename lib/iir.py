@@ -13,39 +13,61 @@ efficient way of doing this"""
 import math, cmath
 
 # Second Order implementation using Direct Form II
-def second_order(a, b, x, w):
-    # a - Denominator coefficients [a0, a1, a2]
-    # b - Numerator coefficients [b0, b1, b2]
-    # x - New data point
-    # w - Buffer
-    # y - New output data
-
-    # Shift the Buffer
-    w = rotate(w, -1)
-
-    # Calculate the new buffer value
-    w[0] = x - a[1] * w[1] - a[2] * w[2]
-
-    # Calculate the new data value
-    y = b[0] * w[0] + b[1] * w[1] + b[2] * w[2]
-
-    # Return the current value and the new buffer
-    return (y, w)
-
-# Function to circle an array
-def rotate(x, k):
-    # Rotate x k times
-    return x[k:]+x[:k]
+class iir:
+    """Class for a second order IIR filter"""
+    def __init__(self, a, b):
+        # a - Denominator coefficients [a0, a1, a2]
+        # b - Numerator coefficients [b0, b1, b2]
+        self._a = a
+        self._b = b
+        
+        # Initialise the filter variables
+        self._w = [0, 0, 0]
+        self._y = 0
+        
+    """ Function to update the filter with a new value"""
+    def update(self, x):
+        # x - The new measurement value to be put in the filter
+        
+        # Rotate the buffer
+        self._w = self.rotate(self._w, -1)
+        
+        # Calculate the new buffer value
+        self._w[0] = x - self._a[1] * self._w[1] - self._a[2] * self._w[2]
+        
+        # Calculate the new output value
+        self._y = self._b[0] * self._w[0] + self._b[1] * self._w[1] + self._b[2] * self._w[2]
+        
+        # Return the new value
+        return self._y
+        
+    """ Function to rotate an array by k """
+    def rotate(self, arr, k):
+        return arr[k:]+arr[:k]
+    
+    """ Function to get the current filter value """
+    def get(self):
+        return self._y
 
 # Example implementation of the filters
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import numpy as np
     import random
-
+    
     # Function to give a random noise variable
     def noise(mag):
         return mag * random.gauss(1, 1)
+    
+    # Define the parameters for the second order filter
+    """ These must be determined beforehand to obtain the output you want """
+    a = [1.0000,   -1.8879,    0.8946] # Denominator coefficients
+    # Gain
+    K = sum(a) / 4
+    b = [1.0000*K,    1.9701*K,    0.9703*K] # Numerator coefficients
+    
+    # Initialise the filter
+    filter = iir(a, b)
 
     # Create the dummy dataset
     N = 1024 # Number of samples
@@ -64,17 +86,13 @@ if __name__ == '__main__':
     # Start an empty list
     filtered = []
 
-    # Define the parameters for the second order filter
-    """ These must be determined beforehand to obtain the output you want """
-    a = [1.0000,   -1.8879,    0.8946] # Denominator coefficients
-    # Gain
-    K = sum(a) / 4
-    b = [1.0000*K,    1.9701*K,    0.9703*K] # Numerator coefficients
-    w = [0] * 3
-
     # Cycle through the output and filter
     for y_val in y:
-        filtered_val, w = second_order(a, b, y_val, w)
+        # Update the filter
+        filter.update(y_val)
+        
+        # Get and store the new filtered value
+        filtered_val = filter.get()
         filtered.append(filtered_val)
 
     # Plot the results
