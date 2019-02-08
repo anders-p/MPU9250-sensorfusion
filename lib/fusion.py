@@ -23,10 +23,10 @@ class tilt:
         self.G_yaw = 0
 
         # Initialise the filter
-        a = [1.0000,   -1.8879,    0.8946] # Denominator coefficients
+        _a = [1.0000,   -1.8879,    0.8946] # Denominator coefficients
         # Gain
-        K = sum(a) / 4
-        b = [1.0000*K,    1.9701*K,    0.9703*K] # Numerator coefficients
+        _K = sum(_a) / 4
+        _b = [1.0000*_K,    1.9701*_K,    0.9703*_K] # Numerator coefficients
 
         self.accel_filter_x = iir(_a, _b)
         self.accel_filter_y = iir(_a, _b)
