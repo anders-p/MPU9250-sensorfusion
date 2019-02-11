@@ -69,7 +69,7 @@ while counter < N:
 f.close()
 
 # Print the elapsed time
-total = utime.ticks_ms() - time
+total = utime.ticks_ms - time
 print("Total time elapsed is: ", total, "ms")
 
 # Unmount the SD card for further use
