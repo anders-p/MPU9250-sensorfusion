@@ -18,34 +18,162 @@ The remaining 3 inputs are variable, and change as the filter is used:
     P_prev - The previous value of the 'confidence' matrix, or the value of the corrected error
     covariance -- This can be initialised at anything EXCEPT zero, and will correct itself as it's used,
     better initial estimates will result in faster convergence
-NOTE: This is still being developed, and can still be vastly improved"""
+NOTE: This is still being developed, and can still be vastly improved
+
+Author: Anders Appel"""
 
 import math, cmath
-import matrix from umatrix # Micropython matrix algebra
-import ulinalg as mat # Linear algebra module
+from umatrix import matrix
+import ulinalg
 
 class eulerKalman:
     """ 4-dimensional Kalman filter - 4 x 1 state variable etc.
+    This is specifically for combining accelerometer and gyroscope values to get roll, pitch and yaw
     NOTE: It is assumed that H is an n x n identity matrix"""
-    def __init(self, Q, R, n=4):
-        # Q - Process noise variance - should be an n x n matrix
-        # R - Signal noise variance - also an n x n matrix
+    def __init(self, Q, R):
+        # Q - Process noise variance - should be a 4 x 4 matrix
+        # R - Signal noise variance - also a 4 x 4 matrix
         # n - Dimension of the Kalman filter
         self._Q = Q
         self._R = R
 
         # Initialise the filter variables
-        self._x = mat.zeros(n, 1)
-        self._P = mat.eye(n) # n x n identity matrix
+        self._x = mat.zeros(4, 1) # Matrix to hold the quaternion values
+        self._P = mat.eye(4) # 4 x 4 identity matrix
+        self._K = 0 # Shouldn't matter, as it is calculated fresh each iteration
+
+        # Initialise the roll, pitch and yaw
+        self._roll = 0
+        self._pitch = 0
+        self._yaw = 0
 
     """ Add a new value to the filter - Allows A to be a changing value"""
     def update(self, z, A):
-        # z - The new values from the sensor
+        # z - The new values from the sensor (should be 4 x 1 matrix)
+        # A - State matrix - should be 4 x 4
 
         # Predict the new filter variables
+        self._x = self.matMult(A, self._x)
+        _temp = self.matMult(A, self._P)
+        self._P = self.matMult(_temp, A.T) + self._Q
 
+        # Calculate the Kalman gain
+        _temp, _det = ulinalg.det_inv(self._P + self._R)
+        self._K = matMult(self._P, _temp)
 
+        # Correct the estimates
+        self._x = self._x + matMult(self._K, (z - self._x))
+        self._P = self._P - matMult(self._K, self._P)
 
+        # Calculate the roll, pitch and yaw
+        self.attitude()
+
+        # Return the quaternion values (not the actual output of the filter)
+        return self._x
+
+    """ Function to return the current values"""
+    def get(self):
+        return self._roll, self._pitch, self._yaw
+
+    """ Function to convert the quaternion to roll, pitch and yaw values"""
+    def attitude(self):
+        # Split the relevant values for readability
+        _x1 = self._x[0, 0]
+        _x2 = self._x[1, 0]
+        _x3 = self._x[2, 0]
+        _x4 = self._x[3, 0]
+
+        self._roll = math.atan2(2*(_x3*_x4 + _x1*_x2), 1 - 2*(_x2*_x2 + _x3*_x3))
+        self._pitch = math.atan2(2*(_x2*_x4 - _x1*_x3))
+        self._yaw = math.atan2(2*(_x2*_x3 + _x1*_x4), 1 - 2*(_x3*_x3 + _x4*_x4))
+
+    """ Function to multiply two matrices
+    NOTES: Order DOES matter, requires modules 'umatrix' and 'ulinalg' to function"""
+    def matMult(self, A, B):
+        # Get the shape of each matrix
+        (mA, nA) = A.shape
+        (mB, nB) = B.shape
+
+        # Check dimensions match
+        if nA == mB:
+            # Resulting matrix will be mA x nB
+            C = ulinalg.zeros(mA, nB)
+
+            # Cycle through the spaces and insert the correct value
+            for i in range(mA):
+                for j in range(nB):
+                    total = 0
+                    print(i, ", ", j) # For testing
+                    for k in range(nA):
+                        total += A[i, k] * B[k, j]
+                    C[i, j] = total
+            return C
+        else:
+            raise ValueError('Matrix Dimensions must agree')
+
+class kalman:
+    """ n-dimensional Kalman filter - n x 1 state variable etc.
+    NOTE: It is assumed that H is an n x n identity matrix, and thus isn't included for simplicity"""
+    def __init(self, Q, R, n=1):
+        # Q - Process noise variance - should be a n x n matrix
+        # R - Signal noise variance - also a n x n matrix
+        # n - Dimension of the Kalman filter
+        self._Q = Q
+        self._R = R
+
+        # Initialise the filter variables
+        self._x = mat.zeros(n, 1) # Matrix to hold the quaternion values
+        self._P = mat.eye(n) # 4 x 4 identity matrix
+        self._K = 0 # Shouldn't matter, as it is calculated fresh each iteration
+
+    """ Add a new value to the filter - Allows A to be a changing value"""
+    def update(self, z, A):
+        # z - The new values from the sensor (should be n x 1 matrix)
+        # A - State matrix - should be n x n
+
+        # Predict the new filter variables
+        self._x = self.matMult(A, self._x)
+        _temp = self.matMult(A, self._P)
+        self._P = self.matMult(_temp, A.T) + self._Q
+
+        # Calculate the Kalman gain
+        _temp, _det = ulinalg.det_inv(self._P + self._R)
+        self._K = self.matMult(self._P, _temp)
+
+        # Correct the estimates
+        self._x = self._x + self.matMult(self._K, (z - self._x))
+        self._P = self._P - self.matMult(self._K, self._P)
+
+        # Return the output of the filter
+        return self._x
+
+    """ Function to return the current value"""
+    def get(self):
+        return self._x
+
+    """ Function to multiply two matrices
+    NOTES: Order DOES matter, requires modules 'umatrix' and 'ulinalg' to function"""
+    def matMult(self, A, B):
+        # Get the shape of each matrix
+        (mA, nA) = A.shape
+        (mB, nB) = B.shape
+
+        # Check dimensions match
+        if nA == mB:
+            # Resulting matrix will be mA x nB
+            C = ulinalg.zeros(mA, nB)
+
+            # Cycle through the spaces and insert the correct value
+            for i in range(mA):
+                for j in range(nB):
+                    total = 0
+                    print(i, ", ", j) # For testing
+                    for k in range(nA):
+                        total += A[i, k] * B[k, j]
+                    C[i, j] = total
+            return C
+        else:
+            raise ValueError('Matrix Dimensions must agree')
 
 class kalman1:
     """ Class for a one dimensional Kalman Filter"""
