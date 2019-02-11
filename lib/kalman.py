@@ -21,6 +21,31 @@ The remaining 3 inputs are variable, and change as the filter is used:
 NOTE: This is still being developed, and can still be vastly improved"""
 
 import math, cmath
+import matrix from umatrix # Micropython matrix algebra
+import ulinalg as mat # Linear algebra module
+
+class eulerKalman:
+    """ 4-dimensional Kalman filter - 4 x 1 state variable etc.
+    NOTE: It is assumed that H is an n x n identity matrix"""
+    def __init(self, Q, R, n=4):
+        # Q - Process noise variance - should be an n x n matrix
+        # R - Signal noise variance - also an n x n matrix
+        # n - Dimension of the Kalman filter
+        self._Q = Q
+        self._R = R
+
+        # Initialise the filter variables
+        self._x = mat.zeros(n, 1)
+        self._P = mat.eye(n) # n x n identity matrix
+
+    """ Add a new value to the filter - Allows A to be a changing value"""
+    def update(self, z, A):
+        # z - The new values from the sensor
+
+        # Predict the new filter variables
+
+
+
 
 class kalman1:
     """ Class for a one dimensional Kalman Filter"""
