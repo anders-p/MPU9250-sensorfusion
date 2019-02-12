@@ -24,7 +24,7 @@ Author: Anders Appel"""
 
 import math, cmath
 from umatrix import matrix
-import ulinalg
+import ulinalg as mat
 
 class eulerKalman:
     """ 4-dimensional Kalman filter - 4 x 1 state variable etc.
@@ -59,11 +59,11 @@ class eulerKalman:
 
         # Calculate the Kalman gain
         _temp, _det = ulinalg.det_inv(self._P + self._R)
-        self._K = matMult(self._P, _temp)
+        self._K = self.matMult(self._P, _temp)
 
         # Correct the estimates
-        self._x = self._x + matMult(self._K, (z - self._x))
-        self._P = self._P - matMult(self._K, self._P)
+        self._x = self._x + self.matMult(self._K, (z - self._x))
+        self._P = self._P - self.matMult(self._K, self._P)
 
         # Calculate the roll, pitch and yaw
         self.attitude()

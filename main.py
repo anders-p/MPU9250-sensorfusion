@@ -22,7 +22,7 @@ N = 4096
 
 # Initialise the file
 f = open('/sd/MPU9250.txt', 'w')
-f.write("Ax, FAx, Gx, Mx\n") # Write an introduction
+f.write("Raw Roll, Filtered Roll, Raw Pitch, Filtered Pitch\n") # Write an introduction
 f.close()
 
 i2c = I2C(0, I2C.MASTER, baudrate=100000)
@@ -48,20 +48,18 @@ f = open('/sd/MPU9250.txt', 'a')
 counter = 0
 
 while counter < N:
+
     # Get new measurements from the sensor
-    sensor.update()
+    (roll, pitch, yaw) = sensor.update()
 
-    # Get the desired values from the sensor class
-    Ax = sensor.accel[0]
-    FAx = sensor.accel_filter_x.get()
-
-    Gx = sensor.gyro[0]
-    Mx = sensor.mag[0]
+    # Get some comparison values from the sensor
+    (Ax, Ay, Az) = sensor.get_accel()
+    (raw_roll, raw_pitch) = sensor.accel_rp(Ax, Ay, Az)
 
     print("Measurement: ", counter)
 
     # Store the values in the file
-    f.write("{},{},{},{}\n".format(Ax, FAx, Gx, Mx))
+    f.write("{},{},{},{}\n".format(raw_roll, roll, raw_pitch, pitch))
 
     counter += 1
 
