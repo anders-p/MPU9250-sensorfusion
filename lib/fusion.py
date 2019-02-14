@@ -25,7 +25,7 @@ class tilt:
         self.G_pitch = 0
         self.G_yaw = 0
 
-        # Initialise the filter
+        # Initialise the filters for the accelerometer and gyroscope
         _a = [1.0000,   -1.8879,    0.8946] # Denominator coefficients
         # Gain
         _K = sum(_a) / 4
@@ -34,6 +34,10 @@ class tilt:
         self.accel_filter_x = iir(_a, _b)
         self.accel_filter_y = iir(_a, _b)
         self.accel_filter_z = iir(_a, _b)
+        
+        self.gyro_filter_x = iir(_a, _b)
+        self.gyro_filter_y = iir(_a, _b)
+        self.gyro_filter_z = iir(_a, _b)
 
         # Initialise Kalman filter matrices
         _q = 0.0001 # Process noise
@@ -58,7 +62,7 @@ class tilt:
         self.measure()
 
         # Convert gyroscope values to quaternion matrix
-        (_p, _q, _r) = self.get_gyro()
+        (_p, _q, _r) = self.filter_gyro()
 
         _p = _p * 0.01 / 2
         _q = _q * 0.01 / 2
@@ -70,7 +74,7 @@ class tilt:
         [_r, _q, -_p, 1]])
 
         # Filter raw accelerometer values
-        (_Ax, _Ay, _Az) = self.filter()
+        (_Ax, _Ay, _Az) = self.filter_accel()
 
         # Calculate roll and pitch
         (_roll, _pitch) = self.accel_rp(_Ax, _Ay, _Az)
@@ -162,9 +166,16 @@ class tilt:
         self.mag = self.sensor.magnetic # (mx, my, mz)
 
     """ Function to filter the measured values"""
-    def filter(self):
+    def filter_accel(self):
         # Update the filters with the new measurements
         _Ax = self.accel_filter_x.update(self.accel[0])
         _Ay = self.accel_filter_y.update(self.accel[1])
         _Az = self.accel_filter_z.update(self.accel[2])
         return _Ax, _Ay, _Az
+    
+    def filter_gyro(self):
+        # Update all the gyroscope filters
+        _Gx = self.gyro_filter_x.update(self.gyro[0])
+        _Gy = self.gyro_filter_y.update(self.gyro[1])
+        _Gz = self.gyro_filter_z.update(self.gyro[2])
+        return _Gx, _Gy, _Gz
