@@ -97,9 +97,9 @@ class tilt:
 
     """ Function to get the current filtered accelerometer readings"""
     def get_gyro(self):
-        _Gx = self.gyro[0]
-        _Gy = self.gyro[1]
-        _Gz = self.gyro[2]
+        _Gx = self.gyro_filter_x.get()
+        _Gy = self.gyro_filter_y.get()
+        _Gz = self.gyro_filter_z.get()
         return _Gx, _Gy, _Gz
 
     """ Calculate the roll and pitch using the accelerometer values"""
