@@ -30,7 +30,7 @@ class eulerKalman:
     """ 4-dimensional Kalman filter - 4 x 1 state variable etc.
     This is specifically for combining accelerometer and gyroscope values to get roll, pitch and yaw
     NOTE: It is assumed that H is an n x n identity matrix"""
-    def __init(self, Q, R):
+    def __init__(self, Q, R):
         # Q - Process noise variance - should be a 4 x 4 matrix
         # R - Signal noise variance - also a 4 x 4 matrix
         # n - Dimension of the Kalman filter
@@ -58,7 +58,7 @@ class eulerKalman:
         self._P = self.matMult(_temp, A.T) + self._Q
 
         # Calculate the Kalman gain
-        _temp, _det = ulinalg.det_inv(self._P + self._R)
+        _det, _temp = mat.det_inv(self._P + self._R)
         self._K = self.matMult(self._P, _temp)
 
         # Correct the estimates
@@ -84,7 +84,7 @@ class eulerKalman:
         _x4 = self._x[3, 0]
 
         self._roll = math.atan2(2*(_x3*_x4 + _x1*_x2), 1 - 2*(_x2*_x2 + _x3*_x3))
-        self._pitch = math.atan2(2*(_x2*_x4 - _x1*_x3))
+        self._pitch = -math.asin(2*(_x2*_x4 - _x1*_x3))
         self._yaw = math.atan2(2*(_x2*_x3 + _x1*_x4), 1 - 2*(_x3*_x3 + _x4*_x4))
 
     """ Function to multiply two matrices
@@ -97,13 +97,12 @@ class eulerKalman:
         # Check dimensions match
         if nA == mB:
             # Resulting matrix will be mA x nB
-            C = ulinalg.zeros(mA, nB)
+            C = mat.zeros(mA, nB)
 
             # Cycle through the spaces and insert the correct value
             for i in range(mA):
                 for j in range(nB):
                     total = 0
-                    print(i, ", ", j) # For testing
                     for k in range(nA):
                         total += A[i, k] * B[k, j]
                     C[i, j] = total
@@ -114,7 +113,7 @@ class eulerKalman:
 class kalman:
     """ n-dimensional Kalman filter - n x 1 state variable etc.
     NOTE: It is assumed that H is an n x n identity matrix, and thus isn't included for simplicity"""
-    def __init(self, Q, R, n=1):
+    def __init__(self, Q, R, n=1):
         # Q - Process noise variance - should be a n x n matrix
         # R - Signal noise variance - also a n x n matrix
         # n - Dimension of the Kalman filter
@@ -137,7 +136,7 @@ class kalman:
         self._P = self.matMult(_temp, A.T) + self._Q
 
         # Calculate the Kalman gain
-        _temp, _det = ulinalg.det_inv(self._P + self._R)
+        _det, _temp = mat.det_inv(self._P + self._R)
         self._K = self.matMult(self._P, _temp)
 
         # Correct the estimates
@@ -161,13 +160,12 @@ class kalman:
         # Check dimensions match
         if nA == mB:
             # Resulting matrix will be mA x nB
-            C = ulinalg.zeros(mA, nB)
+            C = mat.zeros(mA, nB)
 
             # Cycle through the spaces and insert the correct value
             for i in range(mA):
                 for j in range(nB):
                     total = 0
-                    print(i, ", ", j) # For testing
                     for k in range(nA):
                         total += A[i, k] * B[k, j]
                     C[i, j] = total

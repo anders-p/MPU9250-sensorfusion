@@ -22,7 +22,7 @@ N = 4096
 
 # Initialise the file
 f = open('/sd/MPU9250.txt', 'w')
-f.write("Raw Roll, Filtered Roll, Raw Pitch, Filtered Pitch\n") # Write an introduction
+f.write("Raw Roll, Filtered Roll, Raw Pitch, Filtered Pitch, Ax, Ay, Az, Gx, Gy, Gz\n") # Write an introduction
 f.close()
 
 i2c = I2C(0, I2C.MASTER, baudrate=100000)
@@ -53,13 +53,14 @@ while counter < N:
     (roll, pitch, yaw) = sensor.update()
 
     # Get some comparison values from the sensor
+    (Gx, Gy, Gz) = sensor.get_gyro()
     (Ax, Ay, Az) = sensor.get_accel()
     (raw_roll, raw_pitch) = sensor.accel_rp(Ax, Ay, Az)
 
     print("Measurement: ", counter)
 
     # Store the values in the file
-    f.write("{},{},{},{}\n".format(raw_roll, roll, raw_pitch, pitch))
+    f.write("{},{},{},{},{},{},{},{},{},{}\n".format(raw_roll, roll, raw_pitch, pitch, Ax, Ay, Az, Gx, Gy, Gz))
 
     counter += 1
 
@@ -67,7 +68,7 @@ while counter < N:
 f.close()
 
 # Print the elapsed time
-total = utime.ticks_ms - time
+total = utime.ticks_ms() - time
 print("Total time elapsed is: ", total, "ms")
 
 # Unmount the SD card for further use
