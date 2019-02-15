@@ -23,8 +23,9 @@ NOTE: This is still being developed, and can still be vastly improved
 Author: Anders Appel"""
 
 import math, cmath
-from umatrix import matrix
-import ulinalg as mat
+import matrixfunctions as matrix
+# from umatrix import matrix
+# import ulinalg as mat
 
 class eulerKalman:
     """ 4-dimensional Kalman filter - 4 x 1 state variable etc.
@@ -38,8 +39,8 @@ class eulerKalman:
         self._R = R
 
         # Initialise the filter variables
-        self._x = mat.zeros(4, 1) # Matrix to hold the quaternion values
-        self._P = mat.eye(4) # 4 x 4 identity matrix
+        self._x = matrix.matrix(4, 1) # Matrix to hold the quaternion values
+        self._P = matrix.eye(4) # 4 x 4 identity matrix
         self._K = 0 # Shouldn't matter, as it is calculated fresh each iteration
 
         # Initialise the roll, pitch and yaw
@@ -53,17 +54,17 @@ class eulerKalman:
         # A - State matrix - should be 4 x 4
 
         # Predict the new filter variables
-        self._x = self.matMult(A, self._x)
-        _temp = self.matMult(A, self._P)
-        self._P = self.matMult(_temp, A.T) + self._Q
+        self._x = matrix.matMult(A, self._x)
+        _temp = matrix.matMult(A, self._P)
+        self._P = matrix.matMult(_temp, A.transpose) + self._Q
 
         # Calculate the Kalman gain
-        _det, _temp = mat.det_inv(self._P + self._R)
-        self._K = self.matMult(self._P, _temp)
+        _temp = matrix.matInv(self._P + self._R)
+        self._K = matrix.matMult(self._P, _temp)
 
         # Correct the estimates
-        self._x = self._x + self.matMult(self._K, (z - self._x))
-        self._P = self._P - self.matMult(self._K, self._P)
+        self._x = self._x + matrix.matMult(self._K, (z - self._x))
+        self._P = self._P - matrix.matMult(self._K, self._P)
 
         # Calculate the roll, pitch and yaw
         self.attitude()
@@ -78,51 +79,28 @@ class eulerKalman:
     """ Function to convert the quaternion to roll, pitch and yaw values"""
     def attitude(self):
         # Split the relevant values for readability
-        _x1 = self._x[0, 0]
-        _x2 = self._x[1, 0]
-        _x3 = self._x[2, 0]
-        _x4 = self._x[3, 0]
+        _x1 = self._x.getVal(0, 0)
+        _x2 = self._x.getVal(1, 0)
+        _x3 = self._x.getVal(2, 0)
+        _x4 = self._x.getVal(3, 0)
 
         self._roll = math.atan2(2*(_x3*_x4 + _x1*_x2), 1 - 2*(_x2*_x2 + _x3*_x3))
         self._pitch = -math.asin(2*(_x2*_x4 - _x1*_x3))
         self._yaw = math.atan2(2*(_x2*_x3 + _x1*_x4), 1 - 2*(_x3*_x3 + _x4*_x4))
 
-    """ Function to multiply two matrices
-    NOTES: Order DOES matter, requires modules 'umatrix' and 'ulinalg' to function"""
-    def matMult(self, A, B):
-        # Get the shape of each matrix
-        (mA, nA) = A.shape
-        (mB, nB) = B.shape
-
-        # Check dimensions match
-        if nA == mB:
-            # Resulting matrix will be mA x nB
-            C = mat.zeros(mA, nB)
-
-            # Cycle through the spaces and insert the correct value
-            for i in range(mA):
-                for j in range(nB):
-                    total = 0
-                    for k in range(nA):
-                        total += A[i, k] * B[k, j]
-                    C[i, j] = total
-            return C
-        else:
-            raise ValueError('Matrix Dimensions must agree')
-
 class kalman:
     """ n-dimensional Kalman filter - n x 1 state variable etc.
     NOTE: It is assumed that H is an n x n identity matrix, and thus isn't included for simplicity"""
     def __init__(self, Q, R, n=1):
-        # Q - Process noise variance - should be a n x n matrix
-        # R - Signal noise variance - also a n x n matrix
+        # Q - Process noise variance - should be a 4 x 4 matrix
+        # R - Signal noise variance - also a 4 x 4 matrix
         # n - Dimension of the Kalman filter
         self._Q = Q
         self._R = R
 
         # Initialise the filter variables
-        self._x = mat.zeros(n, 1) # Matrix to hold the quaternion values
-        self._P = mat.eye(n) # 4 x 4 identity matrix
+        self._x = matrix.matrix(n, 1) # Matrix to hold the quaternion values
+        self._P = matrix.eye(n) # 4 x 4 identity matrix
         self._K = 0 # Shouldn't matter, as it is calculated fresh each iteration
 
     """ Add a new value to the filter - Allows A to be a changing value"""
@@ -131,17 +109,17 @@ class kalman:
         # A - State matrix - should be n x n
 
         # Predict the new filter variables
-        self._x = self.matMult(A, self._x)
-        _temp = self.matMult(A, self._P)
-        self._P = self.matMult(_temp, A.T) + self._Q
+        self._x = matrix.matMult(A, self._x)
+        _temp = matrix.matMult(A, self._P)
+        self._P = matrix.matMult(_temp, A.transpose) + self._Q
 
         # Calculate the Kalman gain
-        _det, _temp = mat.det_inv(self._P + self._R)
-        self._K = self.matMult(self._P, _temp)
+        _temp = matrix.matInv(self._P + self._R)
+        self._K = matrix.matMult(self._P, _temp)
 
         # Correct the estimates
-        self._x = self._x + self.matMult(self._K, (z - self._x))
-        self._P = self._P - self.matMult(self._K, self._P)
+        self._x = self._x + matrix.matMult(self._K, (z - self._x))
+        self._P = self._P - matrix.matMult(self._K, self._P)
 
         # Return the output of the filter
         return self._x
@@ -149,29 +127,6 @@ class kalman:
     """ Function to return the current value"""
     def get(self):
         return self._x
-
-    """ Function to multiply two matrices
-    NOTES: Order DOES matter, requires modules 'umatrix' and 'ulinalg' to function"""
-    def matMult(self, A, B):
-        # Get the shape of each matrix
-        (mA, nA) = A.shape
-        (mB, nB) = B.shape
-
-        # Check dimensions match
-        if nA == mB:
-            # Resulting matrix will be mA x nB
-            C = mat.zeros(mA, nB)
-
-            # Cycle through the spaces and insert the correct value
-            for i in range(mA):
-                for j in range(nB):
-                    total = 0
-                    for k in range(nA):
-                        total += A[i, k] * B[k, j]
-                    C[i, j] = total
-            return C
-        else:
-            raise ValueError('Matrix Dimensions must agree')
 
 class kalman1:
     """ Class for a one dimensional Kalman Filter"""
@@ -211,6 +166,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     import numpy as np
     import random
+    import time
 
     # Function to give a random noise variable
     def noise(mag):
@@ -254,4 +210,117 @@ if __name__ == '__main__':
     plt.figure(1)
     plt.plot(t, y) # Noisy signal
     plt.plot(t, filtered) # Filtered signal
+    plt.show()
+
+    """Test the euler filter"""
+
+    # Function to simulate gyroscope outputs
+    def getGyro():
+        # Define the output for each axis
+        Gx = 0 + noise(0.1)
+        Gy = 0 + noise(0.1)
+        Gz = 0 + noise(0.1)
+        return Gx, Gy, Gz
+
+    # Function to simulate accelerometer outputs
+    def getAccel():
+        # Define the output for each axis
+        Ax = 0 + noise(0.1)
+        Ay = 0 + noise(0.1)
+        Az = 9.8 + noise(0.1)
+        return Ax, Ay, Az
+
+    # Function to get quaternion values
+    def getQuatern():
+        q1 = 0 + noise(0.1)
+        q2 = 0 + noise(0.1)
+        q3 = 0 + noise(0.1)
+        q4 = 0 + noise(0.1)
+
+        data = [[q1],
+        [q2],
+        [q3],
+        [q4]]
+
+        Q = matrix.matrix(4, 1, data)
+        return Q
+
+    # Create the dummy dataset
+    N = 1024 # Number of samples
+    Fs = 500 # Sample rate (samples/sec)
+    Ts = 1 / Fs # Sample period (sec)
+
+    # Time variable
+    t = np.linspace(0.0, N*Ts, N)
+
+    # Example output - two sinusoids
+    # x = list(np.sin(5.0 * 2.0*np.pi*t) + 0.5*np.sin(2.0 * 2.0*np.pi*t))
+
+    # Initialise Kalman filter matrices
+    q = 0.0001 # Process noise
+    r = 10 # Signal noise
+    Q = matrix.matrix(4, 4, data=[[q, 0, 0, 0],
+    [0, q, 0, 0],
+    [0, 0, q, 0],
+    [0, 0, 0, q]])
+    R = matrix.matrix(4, 4, data=[[r, 0, 0, 0],
+    [0, r, 0, 0],
+    [0, 0, r, 0],
+    [0, 0, 0, r]])
+
+    # Initialise the filter
+    filter2 = eulerKalman(Q, R)
+
+    # Initialise the lists
+    Gx = []
+    Gy = []
+    Gz = []
+    Ax = []
+    Ay = []
+    Az = []
+    R = []
+    P = []
+
+    start = time.process_time()
+
+    # Sitting stationary for first test
+    for n in range(N):
+        # Get the gyroscope values
+        (p, q, r) = getGyro()
+
+        # Store the values in the lists
+        Gx.append(p)
+        Gy.append(q)
+        Gz.append(r)
+
+        # Define the state matrix
+        A = matrix.matrix(4, 4, data=[[1, -p, -q, -r],
+        [p, 1, r, -q],
+        [q, -r, 1, p],
+        [r, q, -p, 1]])
+
+        # Get the accelerometer values
+        (ax, ay, az) = getAccel()
+
+        # Store the values in the lists
+        Ax.append(ax)
+        Ay.append(ay)
+        Az.append(az)
+
+        # Get quaternion values and filter
+        filter2.update(getQuatern(), A)
+
+        (roll, pitch, yaw) = filter2.get()
+
+        R.append(roll)
+        P.append(pitch)
+
+    # Display time
+    time = time.process_time() - start
+    print("Time taken: ", time, " s")
+
+    # Plot the results
+    plt.figure(2)
+    plt.plot(t, P) # Noisy signal
+    plt.plot(t, R) # Filtered signal
     plt.show()
