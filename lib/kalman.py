@@ -62,6 +62,8 @@ class eulerKalman:
         _temp = matrix.matInv(self._P + self._R)
         self._K = matrix.matMult(self._P, _temp)
 
+        print(self._P.get())
+
         # Correct the estimates
         self._x = self._x + matrix.matMult(self._K, (z - self._x))
         self._P = self._P - matrix.matMult(self._K, self._P)

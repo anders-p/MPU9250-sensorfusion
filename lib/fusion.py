@@ -7,8 +7,7 @@ to produce useful outputs
 from mpu9250 import MPU9250
 from iir import iir
 from kalman import eulerKalman
-from umatrix import matrix
-import ulinalg as mat
+import matrixfunctions as matrix
 import math
 
 # Constant Definitions
@@ -34,7 +33,7 @@ class tilt:
         self.accel_filter_x = iir(_a, _b)
         self.accel_filter_y = iir(_a, _b)
         self.accel_filter_z = iir(_a, _b)
-        
+
         self.gyro_filter_x = iir(_a, _b)
         self.gyro_filter_y = iir(_a, _b)
         self.gyro_filter_z = iir(_a, _b)
@@ -42,11 +41,11 @@ class tilt:
         # Initialise Kalman filter matrices
         _q = 0.0001 # Process noise
         _r = 10 # Signal noise
-        _Q = matrix([[_q, 0, 0, 0],
+        _Q = matrix.matrix(4, 4, data=[[_q, 0, 0, 0],
         [0, _q, 0, 0],
         [0, 0, _q, 0],
         [0, 0, 0, _q]])
-        _R = matrix([[_r, 0, 0, 0],
+        _R = matrix.matrix(4, 4, data=[[_r, 0, 0, 0],
         [0, _r, 0, 0],
         [0, 0, _r, 0],
         [0, 0, 0, _r]])
@@ -68,7 +67,7 @@ class tilt:
         _q = _q * 0.01 / 2
         _r = _r * 0.01 / 2
 
-        _A = matrix([[1, -_p, -_q, -_r],
+        _A = matrix.matrix(4, 4, data=[[1, -_p, -_q, -_r],
         [_p, 1, _r, -_q],
         [_q, -_r, 1, _p],
         [_r, _q, -_p, 1]])
@@ -126,10 +125,12 @@ class tilt:
         # sinPhi*cosTheta*cosPsi - cosPhi*sinTheta*sinPsi,
         # cosPhi*sinTheta*cosPsi + sinPhi*cosTheta*sinPsi,
         # cosPhi*cosTheta*sinPsi - sinPhi*sinTheta*cosPsi]
-        _z = matrix([[r2*p2*y2 + r1*p1*y1],
+        _data = [[r2*p2*y2 + r1*p1*y1],
         [r1*p2*y2 + r2*p1*y1],
         [r2*p1*y2 + r1*p2*y1],
-        [r2*p2*y1 + r1*p1*y2]])
+        [r2*p2*y1 + r1*p1*y2]]
+
+        _z = matrix.matrix(4, 1, _data)
 
         return _z
 
@@ -172,7 +173,7 @@ class tilt:
         _Ay = self.accel_filter_y.update(self.accel[1])
         _Az = self.accel_filter_z.update(self.accel[2])
         return _Ax, _Ay, _Az
-    
+
     def filter_gyro(self):
         # Update all the gyroscope filters
         _Gx = self.gyro_filter_x.update(self.gyro[0])

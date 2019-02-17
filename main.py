@@ -18,7 +18,7 @@ os.mount(sd, '/sd')
 pycom.heartbeat(False)
 
 # Set how many samples to take
-N = 4096
+N = 64
 
 # Initialise the file
 f = open('/sd/MPU9250.txt', 'w')
@@ -58,6 +58,7 @@ while counter < N:
     (raw_roll, raw_pitch) = sensor.accel_rp(Ax, Ay, Az)
 
     print("Measurement: ", counter)
+    print("Roll: ", roll)
 
     # Store the values in the file
     f.write("{},{},{},{},{},{},{},{},{},{}\n".format(raw_roll, roll, raw_pitch, pitch, Ax, Ay, Az, Gx, Gy, Gz))
