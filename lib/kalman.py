@@ -54,9 +54,6 @@ class eulerKalman:
         # z - The new values from the sensor (should be 4 x 1 matrix)
         # A - State matrix - should be 4 x 4
 
-        # print(z.get())
-        # print(A.get())
-
         # Predict the new filter variables
         self._x = matrix.matMult(A, self._x)
         _temp = matrix.matMult(A, self._P)
@@ -65,16 +62,10 @@ class eulerKalman:
         # Calculate the Kalman gain
         _temp = matrix.matInv(self._P + self._R)
         self._K = matrix.matMult(self._P, _temp)
-        # _temp = self._P + self._R
-        # self._K = self._P // _temp
-
-        # print(self._P.get())
 
         # Correct the estimates
         self._x = self._x + matrix.matMult(self._K, (z - self._x))
         self._P = self._P - matrix.matMult(self._K, self._P)
-
-        # print(self._P.get())
 
         # Calculate the roll, pitch and yaw
         self.attitude()

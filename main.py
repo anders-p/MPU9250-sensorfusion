@@ -58,7 +58,6 @@ while counter < N:
     (raw_roll, raw_pitch) = sensor.accel_rp(Ax, Ay, Az)
 
     print("Measurement: ", counter)
-    print("Roll: ", roll)
 
     # Store the values in the file
     f.write("{},{},{},{},{},{},{},{},{},{}\n".format(raw_roll, roll, raw_pitch, pitch, Ax, Ay, Az, Gx, Gy, Gz))
