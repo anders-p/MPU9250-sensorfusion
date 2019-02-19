@@ -40,6 +40,7 @@ class eulerKalman:
 
         # Initialise the filter variables
         self._x = matrix.matrix(4, 1) # Matrix to hold the quaternion values
+        self._x.store(1, 0, 0)
         self._P = matrix.eye(4) # 4 x 4 identity matrix
         self._K = 0 # Shouldn't matter, as it is calculated fresh each iteration
 
@@ -53,6 +54,9 @@ class eulerKalman:
         # z - The new values from the sensor (should be 4 x 1 matrix)
         # A - State matrix - should be 4 x 4
 
+        # print(z.get())
+        # print(A.get())
+
         # Predict the new filter variables
         self._x = matrix.matMult(A, self._x)
         _temp = matrix.matMult(A, self._P)
@@ -61,12 +65,16 @@ class eulerKalman:
         # Calculate the Kalman gain
         _temp = matrix.matInv(self._P + self._R)
         self._K = matrix.matMult(self._P, _temp)
+        # _temp = self._P + self._R
+        # self._K = self._P // _temp
 
-        print(self._P.get())
+        # print(self._P.get())
 
         # Correct the estimates
         self._x = self._x + matrix.matMult(self._K, (z - self._x))
         self._P = self._P - matrix.matMult(self._K, self._P)
+
+        # print(self._P.get())
 
         # Calculate the roll, pitch and yaw
         self.attitude()

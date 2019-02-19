@@ -179,4 +179,6 @@ class tilt:
         _Gx = self.gyro_filter_x.update(self.gyro[0])
         _Gy = self.gyro_filter_y.update(self.gyro[1])
         _Gz = self.gyro_filter_z.update(self.gyro[2])
+
+        _Gz = 0
         return _Gx, _Gy, _Gz

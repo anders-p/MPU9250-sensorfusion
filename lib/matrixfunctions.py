@@ -90,6 +90,26 @@ class matrix:
         else:
             raise ValueError('Matrix dimensions do not agree')
 
+    """ Definition of element-wise division of two matrices"""
+    def __floordiv__(self, other):
+        # Check that dimensions match
+        if self.columns == other.columns and self.rows == other.rows:
+            # Create the output matrix
+            result = matrix(self.rows, self.columns)
+
+            # Cycle through and calculate each addition
+            for r in range(self.rows):
+                for c in range(self.columns):
+                    if not other.getVal(r, c) == 0:
+                        value = self.getVal(r, c) / other.getVal(r, c)
+                    else:
+                        value = 0
+                    result.store(value, r, c)
+
+            return result
+        else:
+            raise ValueError('Matrix dimensions do not agree')
+
 """ Function to multiply two matrix class objects"""
 def matMult(A, B):
     # Check that dimensions match and return and error if they don't
@@ -120,8 +140,14 @@ def matInv(A):
         data = A.get()
 
         # Perform the operations
-        for k in range(A.rows):
-            data[k][k] = 1 / data[k][k]
+        # for k in range(A.rows):
+        #     data[k][k] = 1 / data[k][k]
+        for r in range(A.rows):
+            for c in range(A.columns):
+                if r == c:
+                    data[r][c] = 1 / data[r][c]
+                else:
+                    data[r][c] = 0
 
         # Store the data in a new matrix and return
         return matrix(A.rows, A.rows, data)
