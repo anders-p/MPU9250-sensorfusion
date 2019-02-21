@@ -56,7 +56,7 @@ while counter < N:
     (Gx, Gy, Gz) = sensor.get_gyro()
     (Ax, Ay, Az) = sensor.get_accel()
     (Mx, My, Mz) = sensor.get_mag()
-    (raw_roll, raw_pitch) = sensor.accel_rp(Ax, Ay, Az)
+    (raw_roll, raw_pitch, raw_yaw) = sensor.attitude(Ax, Ay, Az, Mx, My, Mz)
     # raw_yaw = sensor.____________
 
     print("Measurement: ", counter)

@@ -34,6 +34,10 @@ class tilt:
         self.accel_filter_y = iir(_a, _b)
         self.accel_filter_z = iir(_a, _b)
 
+        self.mag_filter_x = iir(_a, _b)
+        self.mag_filter_y = iir(_a, _b)
+        self.mag_filter_z = iir(_a, _b)
+
         self.gyro_filter_x = iir(_a, _b)
         self.gyro_filter_y = iir(_a, _b)
         self.gyro_filter_z = iir(_a, _b)
@@ -75,11 +79,14 @@ class tilt:
         # Filter raw accelerometer values
         (_Ax, _Ay, _Az) = self.filter_accel()
 
-        # Calculate roll and pitch
-        (_roll, _pitch) = self.accel_rp(_Ax, _Ay, _Az)
+        # Filter raw magnetometer values
+        (_Mx, _My, _Mz) = self.filter_mag()
+
+        # Calculate roll, pitch and yaw
+        (_roll, _pitch, _yaw) = self.attitude(_Ax, _Ay, _Az, _Mx, _My, _Mz)
 
         # Convert the filtered values to quaternion
-        _z = self.quatern(_roll, _pitch)
+        _z = self.quatern(_roll, _pitch, _yaw)
 
         # Filter the values
         self.kalman_filter.update(_z, _A)
@@ -94,22 +101,37 @@ class tilt:
         _Az = self.accel_filter_z.get()
         return _Ax, _Ay, _Az
 
-    """ Function to get the current filtered accelerometer readings"""
+    def get_mag(self):
+        _Mx = self.mag_filter_x.get()
+        _My = self.mag_filter_y.get()
+        _Mz = self.mag_filter_z.get()
+        return _Mx, _My, _Mz
+
     def get_gyro(self):
         _Gx = self.gyro_filter_x.get()
         _Gy = self.gyro_filter_y.get()
         _Gz = self.gyro_filter_z.get()
         return _Gx, _Gy, _Gz
 
-    """ Calculate the roll and pitch using the accelerometer values"""
-    def accel_rp(self, Ax, Ay, Az):
+    """ Calculate the roll, pitch and yaw using accelerometer and magnetometer values"""
+    def attitude(self, Ax, Ay, Az, Mx, My, Mz):
         # roll = atan(y / z)
-        _rad_roll = math.atan2(Ay, Az)
+        _roll = math.atan2(Ay, Az)
 
         # pitch = atan(-x / sqrt(y^2 + z^2))
-        _rad_pitch = math.atan2(-Ax, math.sqrt(Ay*Ay + Az*Az))
+        _pitch = math.atan2(-Ax, math.sqrt(Ay*Ay + Az*Az))
 
-        return _rad_roll, _rad_pitch
+        # Combine roll and pitch to adjust the magnetometer readings for the tilt
+        # Mx = mx * cos(pitch) + mz * sin(pitch)
+        _M1 = Mx * math.cos(_pitch) + Mz * math.sin(_pitch)
+
+        # My = mx * sin(roll) * sin(pitch) + my * cos(roll) - mz * sin(roll) * cos(pitch)
+        _M2 = Mx * math.sin(_roll) * math.sin(_pitch) + My * math.cos(_roll) - Mz * math.sin(_roll) * math.cos(_pitch)
+
+        # yaw = atan(M2 / M1)
+        _yaw = math.atan2(-_M2, _M1)
+
+        return _roll, _pitch, _yaw
 
     """ Calculate the quaternion values from the roll, pitch and yaw"""
     def quatern(self, roll=0, pitch=0, yaw=0):
@@ -134,31 +156,6 @@ class tilt:
 
         return _z
 
-    # """ Calculate yaw using the roll, pitch and magnetometer readings"""
-    # # NOTE: This function must be called AFTER the accel_rp function in order to have updated roll and pitch values
-    # def yaw(self):
-    #     # Combine roll and pitch to adjust the magnetometer readings for the tilt
-    #     # Mx = mx * cos(rad_pitch) + mz * sin(rad_pitch)
-    #     Mx = self.mag[0] * math.cos(self.rad_pitch) + self.mag[2] * math.sin(self.rad_pitch)
-    #
-    #     # My = mx * sin(rad_roll) * sin(rad_pitch) + my * cos(rad_roll) - mz * sin(rad_roll) * cos(rad_pitch)
-    #     My = self.mag[0] * math.sin(self.rad_roll) * math.sin(self.rad_pitch) + self.mag[1] * math.cos(self.rad_roll) - self.mag[2] * math.sin(self.rad_roll) * math.cos(self.rad_pitch)
-    #
-    #     # yaw = atan(My / Mx)
-    #     self.rad_yaw = math.atan2(-My, Mx)
-
-    # """ Calculate roll, pitch and yaw using gyroscope readings"""
-    # def gyro_vals(self, dt):
-    #     # dt - Change in time since the last measurement
-    #     # Gives the values in radians
-    #
-    #     _temp = self.gyro[0] * RS2DS + 60
-    #
-    #     # roll = Gx * delta_t
-    #     self.G_roll += _temp * dt
-    #     self.G_pitch += self.gyro[1] * dt
-    #     self.G_yaw += self.gyro[2] * dt
-
     """ Function to get the raw measurements from the sensor"""
     def measure(self):
         # Doesn't return any values, but sets the class variables to the current values from the sensor
@@ -173,6 +170,12 @@ class tilt:
         _Ay = self.accel_filter_y.update(self.accel[1])
         _Az = self.accel_filter_z.update(self.accel[2])
         return _Ax, _Ay, _Az
+
+    def filter_mag(self):
+        _Mx = self.mag_filter_x.update(self.mag[0])
+        _My = self.mag_filter_y.update(self.mag[1])
+        _Mz = self.mag_filter_z.update(self.mag[2])
+        return _Mx, _My, _Mz
 
     def filter_gyro(self):
         # Update all the gyroscope filters
