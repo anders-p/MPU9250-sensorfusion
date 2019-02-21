@@ -18,7 +18,7 @@ os.mount(sd, '/sd')
 pycom.heartbeat(False)
 
 # Set how many samples to take
-N = 4096
+N = 256
 
 # Initialise the file
 f = open('/sd/MPU9250.txt', 'w')

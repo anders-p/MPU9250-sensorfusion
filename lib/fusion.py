@@ -24,6 +24,9 @@ class tilt:
         self.G_pitch = 0
         self.G_yaw = 0
 
+        # Offset values for the gyroscope output
+        self._gyroOffset = (-83.53642,78.94066,-69.39014)
+
         # Initialise the filters for the accelerometer and gyroscope
         _a = [1.0000,   -1.8879,    0.8946] # Denominator coefficients
         # Gain
@@ -178,10 +181,15 @@ class tilt:
         return _Mx, _My, _Mz
 
     def filter_gyro(self):
+        # Offset the measurements
+        valx = self.gyro[0] - self._gyroOffset[0]
+        valy = self.gyro[1] - self._gyroOffset[1]
+        valz = self.gyro[2] - self._gyroOffset[2]
+
         # Update all the gyroscope filters
-        _Gx = self.gyro_filter_x.update(self.gyro[0])
-        _Gy = self.gyro_filter_y.update(self.gyro[1])
-        _Gz = self.gyro_filter_z.update(self.gyro[2])
+        _Gx = self.gyro_filter_x.update(valx)
+        _Gy = self.gyro_filter_y.update(valy)
+        _Gz = self.gyro_filter_z.update(valz)
 
         _Gz = 0
         return _Gx, _Gy, _Gz
