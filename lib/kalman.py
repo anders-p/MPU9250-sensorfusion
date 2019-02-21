@@ -22,6 +22,9 @@ faster than the other two, as it removes the need for use of the matrix class
 - euler Kalman filter, a 4-dimensional filter designed specifically for use fusing inputs from a
 9 DOF sensor to determine attitude, an example of its use is included at the bottom
 
+NOTE: The classes requiring matrix operations (euler and n-dimensional) require the additional file 'matrixfunctions'
+which adds simple matrix operations for micropython
+
 Author: Anders Appel"""
 
 import math, cmath
