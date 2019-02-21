@@ -1,6 +1,4 @@
 # MPU9250-sensorfusion
-Author: Anders Appel
-
 Fusion algorithms for an MPU9250 9DOF accelerometer, gyroscope and magnetometer. This library uses a Kalman filter to combine data from an accelerometer, gyroscope and magnetometer to determine the 3-axis attitude of the sensor (the roll, pitch and yaw). It was written for the MPU9250, but the filter could be adapted for any fusion algorithm. There are also classes for 1-dimensional and n-dimensional Kalman filters which can be used for general purpose applications.
 
 Written in micro-python for use with the LoPy Expansion 3.0 board.
