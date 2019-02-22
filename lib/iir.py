@@ -1,14 +1,19 @@
 ## Implementing discrete IIR ##
-"""Functions for first and second order discrete IIR filtering
+"""Class for second order discrete IIR filtering in micropython
+
 Coefficients for the numerator and denominator can be determined using various filter
 design software, such as Matlab
+
 It is possible to implement higher order filters by chaining multiple first and second order filters
 together, the coefficients of these would again need to be calculated manually
 The functions are intended to work on microprocessors using micropython, the example
 shown below uses Python functions only to create an example dataset and plot the results
+
 NOTE: The filters do introduce a significant time delay in the signal, which needs to be taken
 into account when using them. An example of how to delay the output is shown, but is not the most
-efficient way of doing this"""
+efficient way of doing this
+
+FUTURE UPDATES: first order iir filter, built-in time delay, remove need for rotating lists"""
 
 import math, cmath
 
