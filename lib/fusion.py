@@ -1,7 +1,11 @@
 
 """
 Library to fuse values from an MPU9250 9 DOF accelerometer, magnetometer and gyroscope
-to produce useful outputs
+to produce attitude values using a Kalman filter fusion algorithm
+
+Designed to work in micropython
+
+Author: Anders Appel
 """
 
 from mpu9250 import MPU9250
