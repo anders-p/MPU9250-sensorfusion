@@ -5,31 +5,34 @@ such as a sensor. It then updates this probability distribution based on the val
 from the source, providing a smoothing effect in a similar way to a moving average filter.
 It works in two stages, first prediction, where it guesses what the next value from the sensor
 will be, then correction, where it uses the actual value from the source to correct its prediction.
-It requires 3 main parameters to be determined externally to use:
+
+It requires 4 main parameters to be determined externally to use:
     A - The 'prediction matrix', which determines the predicted state of the system, this can
     usually be approximated as 1 for one-dimensional systems, or an identity matrix for higher order
     Q - The covariance of the 'process noise', this is static and represents the idea
     of how quickly the system responds to external input
     R - The covariance of the 'signal noise', this is static and is a measure of how
     much noise is expected in the system
-The remaining 3 inputs are variable, and change as the filter is used:
-    z - The input from the source, usually a sensor
-    x_prev - The previous output from the filter -- Usually initialised as zero
-    P_prev - The previous value of the 'confidence' matrix, or the value of the corrected error
-    covariance -- This can be initialised at anything EXCEPT zero, and will correct itself as it's used,
-    better initial estimates will result in faster convergence
-NOTE: This is still being developed, and can still be vastly improved
+    z - The raw input from the source, usually a sensor
+
+The classes provided are:
+- 1-dimensional filter, which can be useful for simple noise reduction, and operates
+faster than the other two, as it removes the need for use of the matrix class
+- n-dimensional filter, for general use
+- euler Kalman filter, a 4-dimensional filter designed specifically for use fusing inputs from a
+9 DOF sensor to determine attitude, an example of its use is included at the bottom
+
+NOTE: The classes requiring matrix operations (euler and n-dimensional) require the additional file 'matrixfunctions'
+which adds simple matrix operations for micropython
 
 Author: Anders Appel"""
 
 import math, cmath
 import matrixfunctions as matrix
-# from umatrix import matrix
-# import ulinalg as mat
 
 class eulerKalman:
     """ 4-dimensional Kalman filter - 4 x 1 state variable etc.
-    This is specifically for combining accelerometer and gyroscope values to get roll, pitch and yaw
+    This is specifically for combining accelerometer, gyroscope and magnetometer values to get roll, pitch and yaw
     NOTE: It is assumed that H is an n x n identity matrix"""
     def __init__(self, Q, R):
         # Q - Process noise variance - should be a 4 x 4 matrix

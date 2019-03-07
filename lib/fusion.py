@@ -1,7 +1,11 @@
 
 """
 Library to fuse values from an MPU9250 9 DOF accelerometer, magnetometer and gyroscope
-to produce useful outputs
+to produce attitude values using a Kalman filter fusion algorithm
+
+Designed to work in micropython
+
+Author: Anders Appel
 """
 
 from mpu9250 import MPU9250
@@ -26,6 +30,7 @@ class tilt:
 
         # Offset values for the gyroscope output
         self._gyroOffset = (-83.53642,78.94066,-69.39014)
+        self._gyroScale = (0.1, 0.1, 0.1)
 
         # Initialise the filters for the accelerometer and gyroscope
         _a = [1.0000,   -1.8879,    0.8946] # Denominator coefficients
@@ -182,14 +187,18 @@ class tilt:
 
     def filter_gyro(self):
         # Offset the measurements
-        valx = self.gyro[0] - self._gyroOffset[0]
-        valy = self.gyro[1] - self._gyroOffset[1]
-        valz = self.gyro[2] - self._gyroOffset[2]
+        _valx = self.gyro[0] - self._gyroOffset[0]
+        _valy = self.gyro[1] - self._gyroOffset[1]
+        _valz = self.gyro[2] - self._gyroOffset[2]
+        
+        # Scale the measurements
+        _valx *= self._gyroScale[0]
+        _valy *= self._gyroScale[1]
+        _valz *= self._gyroScale[2]
 
         # Update all the gyroscope filters
-        _Gx = self.gyro_filter_x.update(valx)
-        _Gy = self.gyro_filter_y.update(valy)
-        _Gz = self.gyro_filter_z.update(valz)
-
-        _Gz = 0
+        _Gx = self.gyro_filter_x.update(_valx)
+        _Gy = self.gyro_filter_y.update(_valy)
+        _Gz = self.gyro_filter_z.update(_valz)
+        
         return _Gx, _Gy, _Gz

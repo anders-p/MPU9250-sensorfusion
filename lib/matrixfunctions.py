@@ -1,8 +1,8 @@
-""" Library of various functions to perform matrix operations in micropython
+""" Module to add a matrix class to micropython
 
-They are designed to work using two dimensional lists, or lists of lists
-Generally the dimensions need to be given in order to perform the operation, this
-may be removed in later versions
+This class is very basic, and is designed simply to provide functions such as matrix multiplication,
+addition and subtraction. It is not optimised, and still may be added to later, as many operations
+have yet to be defined.
 
 Author: Anders Appel
 """
@@ -12,6 +12,7 @@ class matrix:
     def __init__(self, r, c, data=None):
         # r - number of rows of the matrix
         # c - number of columns
+        # data - 2D list containing data to be stored in matrix
         self.rows = r
         self.columns = c
 
